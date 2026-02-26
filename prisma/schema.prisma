@@ -43,12 +43,16 @@ model Post {
   content   String?
   published Boolean  @default(false)
   authorId  Int
+  tenantId  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
+  @@unique([id, tenantId])
   @@map("posts")
 }
 
@@ -63,6 +67,7 @@ model Tenant {
 
   // Relations
   userTenants UserTenant[]
+  posts       Post[]
 
   @@map("tenants")
 }

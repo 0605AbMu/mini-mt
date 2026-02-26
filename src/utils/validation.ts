@@ -25,3 +25,12 @@ export {
   AddUserToTenantInput,
   RemoveUserFromTenantParams
 } from '../types/tenant.types';
+
+export {
+  createPostSchema,
+  updatePostSchema,
+  postIdParamSchema,
+  CreatePostInput,
+  UpdatePostInput,
+  PostIdParam,
+} from '../types/post.types';

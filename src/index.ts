@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
 import tenantRoutes from './routes/tenant';
+import postRoutes from './routes/post';
 import { dbManager } from './services/dbManager';
 
 // Load environment variables
@@ -61,6 +62,7 @@ import { optionalTenantMiddleware } from './middleware/tenantMiddleware';
 app.use('/api/auth', authRoutes);
 app.use('/api/tenants', optionalTenantMiddleware, tenantRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/posts', postRoutes);
 
 // Import error handlers
 import { globalErrorHandler, notFoundHandler } from './utils/errorHandler';
