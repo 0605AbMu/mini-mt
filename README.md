@@ -96,36 +96,75 @@ pnpm start
 ## API Endpoints
 
 ### Health Check
-- `GET /` - Welcome message
 - `GET /health` - Health check endpoint
 
-### Users
-- `GET /users` - Get all users with their posts
-- `POST /users` - Create a new user
-  ```json
-  {
-    "email": "user@example.com",
-    "name": "John Doe"
-  }
-  ```
+### Authentication
+- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/login` - Login user
+- `POST /api/auth/refresh` - Refresh access token
+- `POST /api/auth/logout` - Logout user
 
-### Posts
-- `GET /posts` - Get all posts with authors
-- `POST /posts` - Create a new post
+### Multi-Tenant Features
+
+#### Tenants (Admin only)
+- `GET /api/tenants` - Get all tenants
+- `GET /api/tenants/:id` - Get tenant by ID with users
+- `POST /api/tenants` - Create a new tenant
   ```json
   {
-    "title": "My Post",
-    "content": "Post content here",
-    "authorId": 1
+    "name": "Company ABC",
+    "slug": "company-abc",
+    "description": "Description of the tenant"
   }
   ```
+- `PUT /api/tenants/:id` - Update tenant
+- `DELETE /api/tenants/:id` - Delete tenant
+
+#### Tenant-User Management (Admin only)
+- `POST /api/tenants/users` - Add user to tenant
+  ```json
+  {
+    "userId": 1,
+    "tenantId": 1
+  }
+  ```
+- `DELETE /api/tenants/:tenantId/users/:userId` - Remove user from tenant
+
+### Users (Admin only)
+- `GET /api/users` - Get all users (supports tenant filtering with X-Tenant-Id header)
+  - Without X-Tenant-Id: Returns all users with their tenant associations
+  - With X-Tenant-Id: Returns only users belonging to that tenant
+
+### Multi-Tenant Headers
+All API requests can include the `X-Tenant-Id` header to specify tenant context:
+```
+X-Tenant-Id: 1
+```
+
+**Required for:**
+- Tenant-specific operations (when middleware enforces it)
+
+**Optional for:**
+- Admin operations (provides filtering context)
+- Tenant management endpoints
 
 ## Database Schema
 
-The project includes example models:
+The project includes the following models:
 
-- **User**: Basic user model with email, name, and timestamps
-- **Post**: Blog post model with title, content, author relation, and timestamps
+- **User**: User model with email, name, password, role, and timestamps
+- **Post**: Blog post model with title, content, author relation, and timestamps  
+- **Tenant**: Multi-tenant model with name, slug, description, and active status
+- **UserTenant**: Junction table for many-to-many relationship between users and tenants
+- **Session**: User session management with tokens and device info
+
+### Multi-Tenant Architecture
+
+The multi-tenant system uses a **shared database, separate schema** approach:
+- All tenants share the same database and tables
+- Data isolation is achieved through tenant-specific filtering
+- Users can belong to multiple tenants (many-to-many relationship)
+- The `X-Tenant-Id` header determines the tenant context for requests
 
 ## Environment Variables
 

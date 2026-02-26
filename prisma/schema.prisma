@@ -30,8 +30,9 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  posts    Post[]
-  sessions Session[]
+  posts       Post[]
+  sessions    Session[]
+  userTenants UserTenant[]
 
   @@map("users")
 }
@@ -49,6 +50,34 @@ model Post {
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@map("posts")
+}
+
+model Tenant {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  userTenants UserTenant[]
+
+  @@map("tenants")
+}
+
+model UserTenant {
+  id       Int @id @default(autoincrement())
+  userId   Int
+  tenantId Int
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tenantId])
+  @@map("user_tenants")
 }
 
 model Session {

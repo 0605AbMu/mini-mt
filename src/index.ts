@@ -4,6 +4,7 @@ import express, { Express, Request, Response } from 'express';
 import helmet from 'helmet';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
+import tenantRoutes from './routes/tenant';
 import { dbManager } from './services/dbManager';
 
 // Load environment variables
@@ -28,7 +29,7 @@ app.use(cors({
   origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:3001'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Tenant-Id'],
 }));
 
 // Import global rate limiter from middleware and config
@@ -53,8 +54,12 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
+// Import tenant middleware
+import { optionalTenantMiddleware } from './middleware/tenantMiddleware';
+
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/tenants', optionalTenantMiddleware, tenantRoutes);
 app.use('/api/users', userRoutes);
 
 // Import error handlers

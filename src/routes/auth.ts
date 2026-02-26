@@ -16,7 +16,6 @@ const router: Router = Router();
 
 // Helper function to conditionally apply rate limiter only in production
 const applyRateLimiter = (limiter: any) => {
-  console.log(configManager.isProduction());
   return configManager.isProduction() ? limiter : (req: any, res: any, next: any) => next(); 
 };
 

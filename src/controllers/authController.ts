@@ -4,7 +4,17 @@ import { Request, Response } from 'express';
 import { config } from '../config';
 import { dbManager } from '../services/dbManager';
 import { sessionManager } from '../services/sessionManager';
-import { LoginInput, loginSchema, RegisterInput, registerSchema } from '../utils/validation';
+import { 
+  LoginInput, 
+  loginSchema, 
+  RegisterInput, 
+  registerSchema,
+  RefreshTokenInput,
+  refreshTokenSchema,
+  LogoutInput,
+  logoutSchema
+} from '../utils/validation';
+import { formatZodError } from '../middleware/validation';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   // Validate input
@@ -131,12 +141,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 // Refresh token endpoint
 export const refreshToken = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { refreshToken } = req.body;
-
-    if (!refreshToken) {
-      res.status(400).json({ error: 'Refresh token is required' });
+    // Validate input
+    const validationResult = refreshTokenSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      res.status(400).json(formatZodError(validationResult.error));
       return;
     }
+
+    const { refreshToken }: RefreshTokenInput = validationResult.data;
 
     const tokenPair = await sessionManager.refreshSession(refreshToken);
 
@@ -160,7 +172,14 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
 // Logout endpoint
 export const logout = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { refreshToken } = req.body;
+    // Validate input (refreshToken is optional for logout)
+    const validationResult = logoutSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      res.status(400).json(formatZodError(validationResult.error));
+      return;
+    }
+
+    const { refreshToken }: LogoutInput = validationResult.data;
 
     if (refreshToken) {
       // Find and invalidate session by refresh token
