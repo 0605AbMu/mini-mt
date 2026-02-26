@@ -75,7 +75,7 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
   }
 };
 
-// Middleware to check if user has required role
+// Middleware to check if user has required role (must run after authenticateToken)
 export const requireRole = (roles: Role[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
@@ -92,8 +92,19 @@ export const requireRole = (roles: Role[]) => {
   };
 };
 
-// Convenience middleware for admin-only routes
-export const requireAdmin = requireRole([Role.ADMIN]);
+// Composed middleware: authenticate then check role
+export const requireRoleWithAuth = (roles: Role[]) => {
+  const roleCheck = requireRole(roles);
+  return (req: Request, res: Response, next: NextFunction): void => {
+    authenticateToken(req, res, (err?: any) => {
+      if (err) return next(err);
+      roleCheck(req, res, next);
+    });
+  };
+};
+
+// Convenience middleware for admin-only routes (authenticate + role check)
+export const requireAdmin = requireRoleWithAuth([Role.ADMIN]);
 
 // Convenience middleware for authenticated users (any role)
 export const requireAuth = authenticateToken;

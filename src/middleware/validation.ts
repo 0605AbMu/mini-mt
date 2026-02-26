@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { z, ZodError, ZodSchema } from 'zod';
+import { ZodError, ZodSchema } from 'zod';
 
 // Validation middleware factory for request body
 export const validateBody = (schema: ZodSchema) => {
@@ -52,7 +52,7 @@ export const validateParams = (schema: ZodSchema) => {
       }
       
       // Replace req.params with validated and transformed data
-      req.params = validationResult.data;
+      req.params = validationResult.data as any;
       next();
     } catch (error) {
       res.status(500).json({
@@ -83,7 +83,7 @@ export const validateQuery = (schema: ZodSchema) => {
       }
       
       // Replace req.query with validated and transformed data
-      req.query = validationResult.data;
+      req.query = validationResult.data as any;
       next();
     } catch (error) {
       res.status(500).json({
@@ -135,7 +135,7 @@ export const validate = (options: {
           });
           return;
         }
-        req.params = paramsValidation.data;
+        req.params = paramsValidation.data as any;
       }
 
       // Validate query if schema provided
@@ -153,7 +153,7 @@ export const validate = (options: {
           });
           return;
         }
-        req.query = queryValidation.data;
+        req.query = queryValidation.data as any;
       }
 
       next();
@@ -175,7 +175,6 @@ export const formatZodError = (error: ZodError) => {
       field: issue.path.join('.'),
       message: issue.message,
       code: issue.code,
-      received: issue.received
     }))
   };
 };
