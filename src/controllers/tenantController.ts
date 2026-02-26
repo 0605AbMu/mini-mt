@@ -155,12 +155,22 @@ export const updateTenant = async (req: Request, res: Response): Promise<void> =
 
 export const deleteTenant = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const paramsValidation = tenantIdParamSchema.safeParse(req.params);
+    if (!paramsValidation.success) {
+      res.status(400).json(formatZodError(paramsValidation.error));
+      return;
+    }
+
+    const { id }: TenantIdParam = paramsValidation.data;
     const prisma = dbManager.getClient();
-    
-    await prisma.tenant.delete({
-      where: { id: parseInt(id as string) }
-    });
+
+    const existing = await prisma.tenant.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ error: 'Tenant not found' });
+      return;
+    }
+
+    await prisma.tenant.delete({ where: { id } });
 
     res.status(204).send();
   } catch (error: any) {
