@@ -11,7 +11,7 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "pnpm exec jest --runInBand --verbose --testPathPattern=tests/"
   },
   "keywords": [],
   "author": "",
@@ -41,6 +41,8 @@
     "nodemon": "^3.1.14",
     "prisma": "^7.4.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.14"
   }
 }
