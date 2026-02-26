@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import { logger } from './logger';
 
 export class DatabaseManager {
   private static instance: DatabaseManager;
@@ -35,9 +36,9 @@ export class DatabaseManager {
   public async connect(): Promise<void> {
     try {
       await this.prisma.$connect();
-      console.log('✅ Database connected successfully');
+      logger.info('Database connected');
     } catch (error) {
-      console.error('❌ Database connection failed:', error);
+      logger.error({ err: error }, 'Database connection failed');
       throw error;
     }
   }
@@ -45,9 +46,9 @@ export class DatabaseManager {
   public async disconnect(): Promise<void> {
     try {
       await this.prisma.$disconnect();
-      console.log('✅ Database disconnected successfully');
+      logger.info('Database disconnected');
     } catch (error) {
-      console.error('❌ Database disconnection failed:', error);
+      logger.error({ err: error }, 'Database disconnection failed');
       throw error;
     }
   }
@@ -55,16 +56,10 @@ export class DatabaseManager {
   public async healthCheck(): Promise<{ status: string; timestamp: string }> {
     try {
       await this.prisma.$queryRaw`SELECT 1`;
-      return {
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-      };
+      return { status: 'healthy', timestamp: new Date().toISOString() };
     } catch (error) {
-      console.error('Database health check failed:', error);
-      return {
-        status: 'unhealthy',
-        timestamp: new Date().toISOString(),
-      };
+      logger.error({ err: error }, 'Database health check failed');
+      return { status: 'unhealthy', timestamp: new Date().toISOString() };
     }
   }
 
@@ -98,30 +93,29 @@ export class DatabaseManager {
       // Re-enable foreign key checks
       await this.prisma.$executeRaw`SET session_replication_role = DEFAULT;`;
 
-      console.log('✅ Database reset completed');
+      logger.info('Database reset completed');
     } catch (error) {
-      console.error('❌ Database reset failed:', error);
+      logger.error({ err: error }, 'Database reset failed');
       throw error;
     }
   }
 
   public async seedDatabase(): Promise<void> {
     try {
-      // Create admin user if not exists
-      const adminUser = await this.prisma.user.upsert({
+      await this.prisma.user.upsert({
         where: { email: 'admin@example.com' },
         update: {},
         create: {
           email: 'admin@example.com',
           name: 'Admin User',
-          password: '$2a$10$example.hash', // This should be properly hashed
+          password: '$2a$10$example.hash',
           role: 'ADMIN',
         },
       });
 
-      console.log('✅ Database seeded successfully');
+      logger.info('Database seeded');
     } catch (error) {
-      console.error('❌ Database seeding failed:', error);
+      logger.error({ err: error }, 'Database seeding failed');
       throw error;
     }
   }
@@ -142,7 +136,7 @@ export class DatabaseManager {
         uptime: process.uptime().toString(),
       };
     } catch (error) {
-      console.error('Failed to get database stats:', error);
+      logger.error({ err: error }, 'Failed to get database stats');
       throw error;
     }
   }

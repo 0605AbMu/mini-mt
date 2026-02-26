@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { SessionJwtPayload } from '../middleware/auth';
 import { config } from '../config';
 import { dbManager } from './dbManager';
+import { logger } from './logger';
 
 export interface SessionData {
   id: string;
@@ -327,10 +328,10 @@ export class SessionManager {
       try {
         const cleaned = await this.cleanupExpiredSessions();
         if (cleaned > 0) {
-          console.log(`🧹 Cleaned up ${cleaned} expired sessions`);
+          logger.info({ count: cleaned }, 'Expired sessions cleaned up');
         }
       } catch (error) {
-        console.error('Session cleanup error:', error);
+        logger.error({ err: error }, 'Session cleanup failed');
       }
     }, config.session.cleanupIntervalMs);
   }

@@ -1,13 +1,18 @@
-import { Request, Response, NextFunction } from 'express';
-import { ZodError } from 'zod';
-import { Prisma } from '@prisma/client';
+import { Request, Response, NextFunction } from "express";
+import { ZodError } from "zod";
+import { Prisma } from "@prisma/client";
+import { logger } from '../services/logger';
 
 // Custom error class for application errors
 export class AppError extends Error {
   public statusCode: number;
   public isOperational: boolean;
 
-  constructor(message: string, statusCode: number = 500, isOperational: boolean = true) {
+  constructor(
+    message: string,
+    statusCode: number = 500,
+    isOperational: boolean = true,
+  ) {
     super(message);
     this.statusCode = statusCode;
     this.isOperational = isOperational;
@@ -26,46 +31,48 @@ interface ErrorResponse {
 
 // Handle Zod validation errors
 const handleZodError = (error: ZodError): ErrorResponse => {
-  const details = error.issues.map(issue => ({
-    field: issue.path.join('.'),
+  const details = error.issues.map((issue) => ({
+    field: issue.path.join("."),
     message: issue.message,
-    code: issue.code
+    code: issue.code,
   }));
 
   return {
-    error: 'Validation Error',
-    message: 'Invalid input data',
-    details
+    error: "Validation Error",
+    message: "Invalid input data",
+    details,
   };
 };
 
 // Handle Prisma errors
-const handlePrismaError = (error: Prisma.PrismaClientKnownRequestError): ErrorResponse => {
+const handlePrismaError = (
+  error: Prisma.PrismaClientKnownRequestError,
+): ErrorResponse => {
   switch (error.code) {
-    case 'P2002':
+    case "P2002":
       return {
-        error: 'Duplicate Entry',
-        message: 'A record with this data already exists'
+        error: "Duplicate Entry",
+        message: "A record with this data already exists",
       };
-    case 'P2025':
+    case "P2025":
       return {
-        error: 'Record Not Found',
-        message: 'The requested record was not found'
+        error: "Record Not Found",
+        message: "The requested record was not found",
       };
-    case 'P2003':
+    case "P2003":
       return {
-        error: 'Foreign Key Constraint',
-        message: 'Referenced record does not exist'
+        error: "Foreign Key Constraint",
+        message: "Referenced record does not exist",
       };
-    case 'P2014':
+    case "P2014":
       return {
-        error: 'Invalid ID',
-        message: 'The provided ID is invalid'
+        error: "Invalid ID",
+        message: "The provided ID is invalid",
       };
     default:
       return {
-        error: 'Database Error',
-        message: 'A database error occurred'
+        error: "Database Error",
+        message: "A database error occurred",
       };
   }
 };
@@ -75,12 +82,12 @@ export const globalErrorHandler = (
   error: Error,
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   let statusCode = 500;
   let errorResponse: ErrorResponse = {
-    error: 'Internal Server Error',
-    message: 'Something went wrong'
+    error: "Internal Server Error",
+    message: "Something went wrong",
   };
 
   // Handle different types of errors
@@ -88,7 +95,7 @@ export const globalErrorHandler = (
     statusCode = error.statusCode;
     errorResponse = {
       error: error.name,
-      message: error.message
+      message: error.message,
     };
   } else if (error instanceof ZodError) {
     statusCode = 400;
@@ -99,29 +106,27 @@ export const globalErrorHandler = (
   } else if (error instanceof Prisma.PrismaClientValidationError) {
     statusCode = 400;
     errorResponse = {
-      error: 'Validation Error',
-      message: 'Invalid data provided to database'
+      error: "Validation Error",
+      message: "Invalid data provided to database",
     };
   }
 
   // Add stack trace in development
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === "development") {
     errorResponse.stack = error.stack;
   }
 
   // Log error for monitoring
-  console.error('Error occurred:', {
-    timestamp: new Date().toISOString(),
-    method: req.method,
-    url: req.url,
-    ip: req.ip,
-    userAgent: req.get('User-Agent'),
-    error: {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
-    }
-  });
+  const logPayload = {
+    err: error,
+    req: { method: req.method, url: req.url, ip: req.ip },
+    statusCode,
+  };
+  if (statusCode >= 500) {
+    logger.error(logPayload, "Unhandled server error");
+  } else {
+    logger.warn(logPayload, "Request error");
+  }
 
   res.status(statusCode).json(errorResponse);
 };
@@ -136,7 +141,7 @@ export const asyncHandler = (fn: Function) => {
 // 404 handler
 export const notFoundHandler = (req: Request, res: Response): void => {
   res.status(404).json({
-    error: 'Not Found',
-    message: `Route ${req.method} ${req.originalUrl} not found`
+    error: "Not Found",
+    message: `Route ${req.method} ${req.originalUrl} not found`,
   });
 };

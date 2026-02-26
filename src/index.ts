@@ -2,11 +2,13 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express, { Express, Request, Response } from 'express';
 import helmet from 'helmet';
+import pinoHttp from 'pino-http';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
 import tenantRoutes from './routes/tenant';
 import postRoutes from './routes/post';
 import { dbManager } from './services/dbManager';
+import { logger } from './services/logger';
 
 // Load environment variables
 dotenv.config();
@@ -36,6 +38,24 @@ app.use(cors({
 // Import global rate limiter from middleware and config
 import { configManager } from './config';
 import { globalLimiter } from './middleware/rateLimiter';
+
+// HTTP request logger
+app.use(pinoHttp({
+  logger,
+  customLogLevel: (_req, res) => {
+    if (res.statusCode >= 500) return 'error';
+    if (res.statusCode >= 400) return 'warn';
+    return 'info';
+  },
+  customSuccessMessage: (req, res) =>
+    `${req.method} ${req.url} ${res.statusCode}`,
+  customErrorMessage: (req, res) =>
+    `${req.method} ${req.url} ${res.statusCode}`,
+  // Skip health check logs to reduce noise
+  autoLogging: {
+    ignore: (req) => req.url === '/health',
+  },
+}));
 
 // Apply global rate limiter only in production
 if (configManager.isProduction()) {
@@ -75,13 +95,13 @@ app.use(globalErrorHandler);
 
 // Graceful shutdown
 const gracefulShutdown = async (signal: string) => {
-  console.log(`Received ${signal}. Shutting down gracefully...`);
+  logger.info({ signal }, 'Shutting down gracefully');
   try {
     await dbManager.disconnect();
-    console.log('Database connection closed.');
+    logger.info('Database connection closed');
     process.exit(0);
   } catch (error) {
-    console.error('Error during shutdown:', error);
+    logger.error({ err: error }, 'Error during shutdown');
     process.exit(1);
   }
 };
@@ -90,8 +110,7 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server is running on http://localhost:${PORT}`);
-  console.log(`📊 Health check available at http://localhost:${PORT}/health`);
+  logger.info({ port: PORT }, 'Server started');
 });
 
 export default app;
