@@ -1,198 +1,181 @@
-# Mini-MT Express + TypeScript + Prisma Server
+# Mini-MT: Multi-Tenant Express + TypeScript Server
 
-A modern Express.js server built with TypeScript and Prisma ORM, using pnpm for package management.
+A robust, production-ready Express.js server boilerplate designed for multi-tenant applications. Built with TypeScript and Prisma ORM, it features a shared database architecture with data isolation, comprehensive authentication, and session management.
 
-## Features
+## 🚀 Features
 
-- **Express.js** - Fast, unopinionated web framework for Node.js
-- **TypeScript** - Type-safe JavaScript with modern features
-- **Prisma ORM** - Next-generation database toolkit
-- **pnpm** - Fast, disk space efficient package manager
-- **Nodemon** - Auto-restart development server
-- **PostgreSQL** - Robust relational database
+- **Multi-Tenancy**: Shared database approach with tenant isolation via middleware.
+- **Express.js (v5)**: Modern web framework for Node.js.
+- **TypeScript**: Type-safe development with modern features.
+- **Prisma ORM**: Next-generation database toolkit for PostgreSQL.
+- **Authentication & Security**:
+  - JWT-based authentication (Access & Refresh tokens).
+  - Session management with multi-device logout.
+  - Role-based access control (Admin/User).
+  - Rate limiting (Express Rate Limit & Slow Down).
+  - Security headers with Helmet.
+  - CORS configuration.
+- **Logging**: High-performance logging with Pino and Pino-HTTP.
+- **Validation**: Schema validation using Zod.
+- **Database**: PostgreSQL with Prisma migrations.
 
-## Project Structure
+## 📂 Project Structure
 
-```
+```text
 mini-mt/
-├── src/
-│   └── index.ts          # Main server file
-├── prisma/
-│   └── schema.prisma     # Database schema
-├── dist/                 # Compiled JavaScript output
+├── prisma/               # Database schema and migrations
+│   ├── migrations/       # SQL migration files
+│   └── schema.prisma     # Prisma data model
+├── src/                  # Source code
+│   ├── config/           # App configuration and env validation
+│   ├── controllers/      # Request handlers
+│   ├── middleware/       # Auth, tenant, validation, and rate limiters
+│   ├── routes/           # API route definitions
+│   ├── services/         # Business logic and external integrations
+│   ├── types/            # TypeScript interfaces and types
+│   ├── utils/            # Shared utilities (error handling, logger)
+│   └── index.ts          # Server entry point
+├── tests/                # API and integration tests
+├── dist/                 # Compiled JavaScript (after build)
+├── .env                  # Environment variables (required)
+├── .env.local            # Local environment overrides (optional)
+├── jest.config.js        # Test runner configuration
+├── nodemon.json          # Development auto-reload config
 ├── package.json          # Project dependencies and scripts
-├── tsconfig.json         # TypeScript configuration
-├── nodemon.json          # Nodemon configuration
-├── prisma.config.ts      # Prisma configuration
-└── .env                  # Environment variables
+├── tsconfig.json         # TypeScript compiler configuration
+└── prisma.config.ts      # Prisma runtime configuration
 ```
 
-## Getting Started
+## 🛠️ Prerequisites
 
-### Prerequisites
+- **Node.js**: v18.0.0 or higher
+- **pnpm**: v10.0.0 or higher (recommended)
+- **PostgreSQL**: A running instance (local or remote)
 
-- Node.js (v18 or higher)
-- pnpm
-- PostgreSQL database
+## ⚙️ Installation & Setup
 
-### Installation
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd mini-mt
+   ```
 
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd mini-mt
-```
+2. **Install dependencies**:
+   ```bash
+   pnpm install
+   ```
 
-2. Install dependencies:
-```bash
-pnpm install
-```
+3. **Configure environment variables**:
+   Create a `.env` file in the root directory (see [Environment Variables](#-environment-variables)).
 
-3. Set up your database:
-   - Update the `DATABASE_URL` in `.env` file with your PostgreSQL connection string
-   - Or use the provided Prisma Postgres URL for development
+4. **Initialize the database**:
+   Generate Prisma client and push the schema to your database:
+   ```bash
+   pnpm db:generate
+   pnpm db:push
+   ```
+   *Note: For production, use `pnpm db:migrate` instead of `db:push`.*
 
-4. Generate Prisma client:
-```bash
-pnpm db:generate
-```
-
-5. Push the schema to your database:
-```bash
-pnpm db:push
-```
+## 🚀 Running the App
 
 ### Development
-
-Start the development server with hot reload:
+Start the server with hot-reload (using Nodemon):
 ```bash
 pnpm dev
 ```
-
-The server will start on `http://localhost:3000`
+The server will be available at `http://localhost:3000`.
 
 ### Production
-
-1. Build the project:
+Build the project and start the compiled JavaScript:
 ```bash
 pnpm build
-```
-
-2. Start the production server:
-```bash
 pnpm start
 ```
 
-## Available Scripts
+## 🧪 Testing
 
-- `pnpm dev` - Start development server with hot reload
-- `pnpm build` - Build the project for production
-- `pnpm start` - Start production server
-- `pnpm db:generate` - Generate Prisma client
-- `pnpm db:push` - Push schema changes to database
-- `pnpm db:migrate` - Run database migrations
-- `pnpm db:studio` - Open Prisma Studio (database GUI)
+The project uses Jest for testing.
 
-## API Endpoints
-
-### Health Check
-- `GET /health` - Health check endpoint
-
-### Authentication
-- `POST /api/auth/register` - Register a new user
-- `POST /api/auth/login` - Login user
-- `POST /api/auth/refresh` - Refresh access token
-- `POST /api/auth/logout` - Logout user
-
-### Multi-Tenant Features
-
-#### Tenants (Admin only)
-- `GET /api/tenants` - Get all tenants
-- `GET /api/tenants/:id` - Get tenant by ID with users
-- `POST /api/tenants` - Create a new tenant
-  ```json
-  {
-    "name": "Company ABC",
-    "slug": "company-abc",
-    "description": "Description of the tenant"
-  }
-  ```
-- `PUT /api/tenants/:id` - Update tenant
-- `DELETE /api/tenants/:id` - Delete tenant
-
-#### Tenant-User Management (Admin only)
-- `POST /api/tenants/users` - Add user to tenant
-  ```json
-  {
-    "userId": 1,
-    "tenantId": 1
-  }
-  ```
-- `DELETE /api/tenants/:tenantId/users/:userId` - Remove user from tenant
-
-### Users (Admin only)
-- `GET /api/users` - Get all users (supports tenant filtering with X-Tenant-Id header)
-  - Without X-Tenant-Id: Returns all users with their tenant associations
-  - With X-Tenant-Id: Returns only users belonging to that tenant
-
-### Multi-Tenant Headers
-All API requests can include the `X-Tenant-Id` header to specify tenant context:
-```
-X-Tenant-Id: 1
+```bash
+# Run all tests
+pnpm test
 ```
 
-**Required for:**
-- Tenant-specific operations (when middleware enforces it)
+## 📜 Available Scripts
 
-**Optional for:**
-- Admin operations (provides filtering context)
-- Tenant management endpoints
+| Script | Description |
+| :--- | :--- |
+| `pnpm dev` | Starts the development server with auto-reload. |
+| `pnpm build` | Compiles TypeScript source to `dist/`. |
+| `pnpm start` | Runs the compiled server from `dist/index.js`. |
+| `pnpm test` | Executes Jest tests in the `tests/` directory. |
+| `pnpm db:generate` | Generates the Prisma Client. |
+| `pnpm db:push` | Pushes schema changes directly to the database (dev only). |
+| `pnpm db:migrate` | Creates and applies database migrations (recommended for prod). |
+| `pnpm db:studio` | Opens Prisma Studio GUI to explore your data. |
 
-## Database Schema
+## 🔑 Environment Variables
 
-The project includes the following models:
+The application requires several environment variables to function correctly. You can define these in a `.env` file.
 
-- **User**: User model with email, name, password, role, and timestamps
-- **Post**: Blog post model with title, content, author relation, and timestamps  
-- **Tenant**: Multi-tenant model with name, slug, description, and active status
-- **UserTenant**: Junction table for many-to-many relationship between users and tenants
-- **Session**: User session management with tokens and device info
+| Variable | Description | Default | Required |
+| :--- | :--- | :--- | :--- |
+| `DATABASE_URL` | PostgreSQL connection string | - | **Yes** |
+| `JWT_SECRET` | Secret key for signing JWTs | - | **Yes** |
+| `PORT` | Port for the Express server | `3000` | No |
+| `NODE_ENV` | Environment (`development`, `production`, `test`) | `development` | No |
+| `ALLOWED_ORIGINS` | Comma-separated list of CORS origins | `http://localhost:3000` | No |
+| `JWT_EXPIRES_IN` | Access token lifespan (e.g., `15m`) | `15m` | No |
+| `JWT_REFRESH_EXPIRES_IN` | Refresh token lifespan (e.g., `7d`) | `7d` | No |
+| `MAX_ACTIVE_SESSIONS` | Max concurrent sessions per user | `5` | No |
+| `BCRYPT_SALT_ROUNDS` | Cost factor for password hashing | `14` | No |
+| `RATE_LIMIT_WINDOW_MS` | Window for rate limiting in ms | `900000` (15m) | No |
+| `RATE_LIMIT_MAX_REQUESTS`| Max requests per window | `100` | No |
 
-### Multi-Tenant Architecture
+## 🛣️ API Endpoints
 
-The multi-tenant system uses a **shared database, separate schema** approach:
-- All tenants share the same database and tables
-- Data isolation is achieved through tenant-specific filtering
-- Users can belong to multiple tenants (many-to-many relationship)
-- The `X-Tenant-Id` header determines the tenant context for requests
+### 🏥 Health Check
+- `GET /health` - Service status and uptime.
 
-## Environment Variables
+### 🔐 Authentication (`/api/auth`)
+- `POST /register` - Register a new user.
+- `POST /login` - Authenticate and receive tokens.
+- `POST /refresh` - Get a new access token using a refresh token.
+- `POST /logout` - Invalidate current session.
+- `POST /logout-all` - Invalidate all active sessions for the user (Auth required).
+- `GET /me` - Get current user profile (Auth required).
+- `GET /sessions` - List active sessions (Auth required).
 
-Create a `.env` file in the root directory:
+### 🏢 Tenants (`/api/tenants`) - *Admin Only*
+- `GET /` - List all tenants.
+- `GET /:id` - Get tenant details with users.
+- `POST /` - Create a new tenant.
+- `PUT /:id` - Update tenant metadata.
+- `DELETE /:id` - Remove a tenant.
+- `POST /users` - Associate a user with a tenant.
+- `DELETE /:tenantId/users/:userId` - Disassociate user from tenant.
 
-```env
-DATABASE_URL="your-postgresql-connection-string"
-PORT=3000
-```
+### 👤 Users (`/api/users`) - *Admin Only*
+- `GET /` - List users. Supports optional tenant filtering via `X-Tenant-Id` header.
 
-## Technologies Used
+### 📝 Posts (`/api/posts`) - *Auth & Tenant Required*
+- `GET /` - List all posts for the active tenant.
+- `GET /:id` - Get specific post.
+- `POST /` - Create a post in the active tenant.
+- `PUT /:id` - Update post.
+- `DELETE /:id` - Delete post.
 
-- **Express.js** - Web framework
-- **TypeScript** - Programming language
-- **Prisma** - Database ORM
-- **PostgreSQL** - Database
-- **pnpm** - Package manager
-- **Nodemon** - Development tool
-- **ts-node** - TypeScript execution engine
+## 🏗️ Multi-Tenant Architecture
 
-## Contributing
+This project implements a **Shared Database, Shared Schema** strategy:
+- **Isolation**: Data isolation is enforced at the query level. Most routes require the `X-Tenant-Id` header.
+- **Context**: The `tenantMiddleware` extracts the tenant ID from headers and ensures the user has access to that specific tenant.
+- **Relationships**: Users can belong to multiple tenants (Many-to-Many).
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+### The `X-Tenant-Id` Header
+- **Required**: For all `/api/posts` operations and tenant-specific filtering.
+- **Optional**: For Admin endpoints like `/api/users` to filter by tenant.
 
-## License
+## 📄 License
 
-This project is licensed under the ISC License.
+This project is licensed under the **ISC License**. See the `package.json` file for details.
