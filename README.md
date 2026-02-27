@@ -92,6 +92,30 @@ pnpm build
 pnpm start
 ```
 
+## 🐳 Docker Deployment
+
+The application is available as a Docker image on GitHub Container Registry (GHCR).
+
+### Pull the Image
+```bash
+docker pull ghcr.io/0605abmu/mini-mt/master:latest
+```
+
+### Run the Container
+To run the container, you need to provide the required environment variables:
+
+```bash
+docker run -d \
+  --name mini-mt \
+  -p 3000:3000 \
+  -e DATABASE_URL="postgresql://user:password@host:port/db" \
+  -e JWT_SECRET="your_secret_key" \
+  -e ...
+  ghcr.io/0605abmu/mini-mt/master:latest
+```
+
+*Note: Make sure your database is accessible from the Docker container.*
+
 ## 🧪 Testing
 
 The project uses Jest for testing.
